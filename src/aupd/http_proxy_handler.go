@@ -1,20 +1,15 @@
 package main
 
 import (
-  _ "bytes"
+
   "cache"
   "client"
-  _ "io"
-  _ "io/ioutil"
-  "log"
-  _ "net"
   "net/http"
-  _ "sync"
   "time"
 )
 
 const (
-  ENTITY_DURATION = 10 //Second
+  ENTITY_DURATION = 5 //Second
 )
 
 var Cache = cache.New()

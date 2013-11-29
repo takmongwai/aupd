@@ -1,11 +1,12 @@
 package client
 
 import (
-  "cache"
+  "ioutil"
   "net"
   "net/http"
   "sync"
   "time"
+  "util"
 )
 
 const (
@@ -48,6 +49,17 @@ func showError(w http.ResponseWriter, msg []byte, outbuf []byte, written *int64)
   w.Write(msg)
 }
 
+func HttpRequestByte(r *http.Request) {
+  var (
+    req *http.Request
+    err error
+  )
+  req, err = http.NewRequest(r.Method, r.URL.String(), r.Body)
+  headerCopy(r.Header, &req.Header)
+  defer func() { req.Close = true }()
+  body, err := ioutil.ReadAll(resp.Body)
+}
+
 func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, written int64, err error) {
   var req *http.Request
 
@@ -72,7 +84,7 @@ func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, written i
 
   w.WriteHeader(resp.StatusCode)
 
-  body, written, err = cache.Copy(w, resp.Body)
+  body, written, err = util.Copy(w, resp.Body)
   if err != nil {
     showError(w, []byte(err.Error()), body, &written)
     return
