@@ -1,72 +1,69 @@
 package main
 
 import (
-	"cache"
-	"io"
-	_ "io/ioutil"
-	"log"
-	"net"
-	"net/http"
-	"time"
+  _ "bytes"
+  "cache"
+  "client"
+  _ "io"
+  _ "io/ioutil"
+  "log"
+  _ "net"
+  "net/http"
+  _ "sync"
+  "time"
 )
 
 const (
-	CONNECTION_TIME_OUT     = 15
-	RESPONSE_TIME_OUT       = 60
-	MAX_IDLE_CONNS_PRE_HOST = 200
-	DISABLE_COMPRESSION     = false
-	DISABLE_KEEP_ALIVES     = false
+  ENTITY_DURATION = 10 //Second
 )
 
-var transport = http.Transport{
-	Dial: func(nework, addr string) (net.Conn, error) {
-		return net.DialTimeout(nework, addr, time.Duration(CONNECTION_TIME_OUT)*time.Second)
-	},
-	ResponseHeaderTimeout: time.Duration(RESPONSE_TIME_OUT) * time.Second,
-	DisableCompression:    DISABLE_COMPRESSION,
-	DisableKeepAlives:     DISABLE_KEEP_ALIVES,
-	MaxIdleConnsPerHost:   MAX_IDLE_CONNS_PRE_HOST,
-}
-
-var client = &http.Client{
-	Transport: &transport,
-}
-
-func headerCopy(s http.Header, d *http.Header) {
-	for hk, _ := range s {
-		d.Set(hk, s.Get(hk))
-	}
-}
+var Cache = cache.New()
 
 func showError(w http.ResponseWriter, msg []byte) {
-	w.WriteHeader(500)
-	w.Write(msg)
+  w.WriteHeader(500)
+  w.Write(msg)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+  backend_server(w, r)
+}
 
-	log.Println("----------------------------------")
-	log.Println("RequestURI", r.RequestURI)
-	log.Println("RemoteAddr", r.RemoteAddr)
-	log.Println("----------------------------------")
-	cache.GenKey(r)
+func backend_server(w http.ResponseWriter, r *http.Request) {
+  var (
+    cache_key     = cache.GenKey(r)
+    cache_storage *cache.Storage
+    cache_exists  bool
+    resp_body     []byte
+    err           error
+  )
 
-	req, err := http.NewRequest(r.Method, r.URL.String(), r.Body)
-	headerCopy(r.Header, &req.Header)
-	defer func() { req.Close = true }()
-	if err != nil {
-		showError(w, []byte(err.Error()))
-		return
-	}
-	resp, err := client.Do(req)
-	defer resp.Body.Close()
-	if err != nil {
-		showError(w, []byte(err.Error()))
-		return
-	}
-	for hk, _ := range resp.Header {
-		w.Header().Set(hk, resp.Header.Get(hk))
-	}
-	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+  cache_storage, cache_exists = Cache.Get(cache_key)
+  if cache_exists {
+    for hk, _ := range cache_storage.Response.Header {
+      w.Header().Set(hk, cache_storage.Response.Header.Get(hk))
+    }
+    w.Write(cache_storage.Response.Body)
+    return
+  }
+
+  resp_body, _, err = client.HttpRequest(w, r)
+  if err != nil {
+    showError(w, []byte(err.Error()))
+    return
+  }
+
+  cache_storage = &cache.Storage{
+    InitAt:             time.Now(),
+    UpdatedAt:          time.Now(),
+    Duration:           ENTITY_DURATION,
+    ClientLastAccessAt: time.Now(),
+    ClientAccessCount:  1,
+    CurrentStatus:      cache.STATUS_NORMAL,
+    Request:            r,
+    Response: &cache.ResponseStorage{
+      Header: w.Header(),
+      Body:   resp_body,
+    },
+  }
+  Cache.Set(cache_key, cache_storage)
 }
