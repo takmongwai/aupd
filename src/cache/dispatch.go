@@ -1,25 +1,35 @@
 package cache
 
 import (
+  "client"
   "log"
-  "net/http"
+  _ "net/http"
   "time"
-  _"client"
 )
 
 var c = New()
 
 //更新超时的实体
 func update_timeout_entity(s *Storage) {
-  log.Println(s.Request.URL.String())
+  log.Printf("update begin,%s\n", s.Request.URL.String())
+  s.CurrentStatus = STATUS_UPDATING
   r := s.Request
-  log.Println(w,r)
-  log.Println(client.HttpRequest(w,r))
+  body, header, err := client.HttpDoByte(r)
+  if err != nil {
+    log.Printf("update_timeout_entity error. %v", err)
+    return
+  }
+  defer func() { s.CurrentStatus = STATUS_NORMAL }()
+  s.UpdatedAt = time.Now()
+  s.Response.Body = body
+  s.Response.Header = *header
+  log.Printf("update end,%s\n", s.Request.URL.String())
 }
 
 func Dispatch() {
   for {
-    time.Sleep(time.Millisecond * 500)
+    time.Sleep(time.Millisecond * 1000)
+    log.Printf("total entities: %d", c.Size())
     for _, s := range c.TimeoutEntities() {
       go update_timeout_entity(s)
     }
