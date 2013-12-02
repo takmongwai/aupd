@@ -13,7 +13,7 @@ var lock = sync.Mutex{}
 const (
   STATUS_NORMAL               = 1
   STATUS_UPDATING             = 2
-  ENTITY_UPDATE_DURATION      = 5    //Second,每个缓存需要更新的时间,依据最后更新时间和当前时间计算
+  ENTITY_UPDATE_DURATION      = 60    //Second,每个缓存需要更新的时间,依据最后更新时间和当前时间计算
   ENTITY_DURATION             = 3600 
   CLIENT_LAST_ACCESS_DURATION = 3600 //每个缓存的持续时间,依据最后访问时间和当前时间计算
 )
