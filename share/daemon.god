@@ -2,7 +2,7 @@
 
 app_name = "aupd_daemon"
 app_file = "aupd"
-app_path = "/srv/aupd/bin/"
+app_path = "/srv/aupd"
 log_file = "#{app_path}/log/#{app_name}.log"
 pid_file = "#{app_path}/tmp/#{app_name}.pid"
 
@@ -11,7 +11,7 @@ app_user = "www-data"
 #启动命令
 start_command = "\
 cd #{app_path} && \
-#{app_path}/#{app_file}"
+#{app_path}/bin/#{app_file}"
 
 #停止命令
 stop_command = "kill -QUIT `cat #{pid_file}`"
