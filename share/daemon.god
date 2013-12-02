@@ -14,7 +14,7 @@ cd #{app_path} && \
 #{app_path}/bin/#{app_file}"
 
 #停止命令
-stop_command = "kill -QUIT `cat #{pid_file}`"
+stop_command = %Q~kill -9 `ps aux | grep "/srv/aupd/bin/aupd" | grep -v grep | awk '{print $2}'`~
 #重启命令
 restart_command = "#{stop_command} && #{start_command}"
 
