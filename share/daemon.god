@@ -20,7 +20,7 @@ restart_command = "#{stop_command} && #{start_command}"
 
 God.watch do |w|
   #分组名
-  w.group = "#{app_name}"
+  #w.group = "#{app_name}"
   w.dir = app_path
   w.name = "#{app_name}"
   w.env = {"GOMAXPROCS" => 8}
