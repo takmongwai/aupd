@@ -9,9 +9,7 @@ pid_file = "#{app_path}/tmp/#{app_name}.pid"
 #运行进程的用户和组
 app_user = "www-data"
 #启动命令
-start_command = "ulimit -n 655350 && \
-cd #{app_path} && \
-#{app_path}/bin/#{app_file}"
+start_command = "ulimit -n 655350 ; GOMAXPROCS=8 #{app_path}/bin/#{app_file}"
 
 #停止命令
 stop_command = %Q~kill -9 `ps aux | grep "/srv/aupd/bin/aupd" | grep -v grep | awk '{print $2}'`~
@@ -23,7 +21,6 @@ God.watch do |w|
   #w.group = "#{app_name}"
   w.dir = app_path
   w.name = "#{app_name}"
-  w.env = {"GOMAXPROCS" => 8}
   w.log = log_file
   w.pid_file = pid_file
   w.interval = 30.seconds
