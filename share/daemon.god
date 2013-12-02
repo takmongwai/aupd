@@ -9,7 +9,7 @@ pid_file = "#{app_path}/tmp/#{app_name}.pid"
 #运行进程的用户和组
 app_user = "www-data"
 #启动命令
-start_command = "\
+start_command = "ulimit -n 655350 && \
 cd #{app_path} && \
 #{app_path}/bin/#{app_file}"
 
