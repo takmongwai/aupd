@@ -2,6 +2,7 @@ package client
 
 import (
   "io/ioutil"
+  _ "log"
   "net"
   "net/http"
   "sync"
@@ -10,8 +11,8 @@ import (
 )
 
 const (
-  CONNECTION_TIME_OUT     = 15
-  RESPONSE_TIME_OUT       = 60
+  CONNECTION_TIME_OUT     = 15 //连接超时
+  RESPONSE_TIME_OUT       = 60 //响应超时
   MAX_IDLE_CONNS_PRE_HOST = 200
   DISABLE_COMPRESSION     = false
   DISABLE_KEEP_ALIVES     = false
@@ -19,6 +20,12 @@ const (
 )
 
 var lock = sync.Mutex{}
+
+type HttpResponse struct { //响应体
+  Header     http.Header
+  Body       []byte
+  StatusCode int
+}
 
 var transport = http.Transport{
   Dial: func(nework, addr string) (net.Conn, error) {
@@ -49,7 +56,7 @@ func showError(w http.ResponseWriter, msg []byte, outbuf []byte, written *int64)
   w.Write(msg)
 }
 
-func HttpDoByte(r *http.Request) (body []byte, resp_header *http.Header, err error) {
+func HttpRequestNotResponse(r *http.Request) (body []byte, resp_status_code int, resp_header *http.Header, err error) {
   var (
     req  *http.Request
     resp *http.Response
@@ -65,6 +72,8 @@ func HttpDoByte(r *http.Request) (body []byte, resp_header *http.Header, err err
     panic(err)
   }
   defer resp.Body.Close()
+  resp_status_code = resp.StatusCode
+  
   resp_header = &http.Header{}
   headerCopy(resp.Header, resp_header)
   body, err = ioutil.ReadAll(resp.Body)
@@ -74,7 +83,7 @@ func HttpDoByte(r *http.Request) (body []byte, resp_header *http.Header, err err
   return
 }
 
-func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, written int64, err error) {
+func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, resp_status_code int, written int64, err error) {
   var req *http.Request
 
   req, err = http.NewRequest(r.Method, r.URL.String(), r.Body)
@@ -96,7 +105,8 @@ func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, written i
     w.Header().Set(hk, resp.Header.Get(hk))
   }
 
-  w.WriteHeader(resp.StatusCode)
+  resp_status_code = resp.StatusCode
+  w.WriteHeader(resp_status_code)
 
   body, written, err = util.Copy(w, resp.Body)
   if err != nil {

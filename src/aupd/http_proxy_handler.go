@@ -1,15 +1,12 @@
 package main
 
 import (
-
   "cache"
   "client"
+  "log"
   "net/http"
+  _ "strings"
   "time"
-)
-
-const (
-  ENTITY_DURATION = 5 //Second
 )
 
 var Cache = cache.New()
@@ -20,17 +17,28 @@ func showError(w http.ResponseWriter, msg []byte) {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-  backend_server(w, r)
-}
 
-func backend_server(w http.ResponseWriter, r *http.Request) {
+  defer func() {
+    if re := recover(); re != nil {
+      log.Println("Recovered in handler:", re)
+      w.WriteHeader(500)
+      w.Write([]byte("BackenServer Error"))
+    }
+  }()
+
   var (
-    cache_key     = cache.GenKey(r)
-    cache_storage *cache.Storage
-    cache_exists  bool
-    resp_body     []byte
-    err           error
+    cache_key        = cache.GenKey(r)
+    cache_storage    *cache.Storage
+    cache_exists     bool
+    resp_body        []byte
+    err              error
+    resp_status_code int
   )
+
+  if r.Header.Get("ACS_RELOAD") == "true" {
+    log.Println("RELOAD")
+    Cache.Remove(cache_key)
+  }
 
   cache_storage, cache_exists = Cache.Get(cache_key)
   if cache_exists {
@@ -41,23 +49,30 @@ func backend_server(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  resp_body, _, err = client.HttpRequest(w, r)
+  resp_body, resp_status_code, _, err = client.HttpRequest(w, r)
+
   if err != nil {
     showError(w, []byte(err.Error()))
+    return
+  }
+
+  if resp_status_code != 200 {
     return
   }
 
   cache_storage = &cache.Storage{
     InitAt:             time.Now(),
     UpdatedAt:          time.Now(),
-    Duration:           ENTITY_DURATION,
+    UpdateDuration:     cache.ENTITY_UPDATE_DURATION,
+    Duration:           cache.ENTITY_DURATION,
     ClientLastAccessAt: time.Now(),
     ClientAccessCount:  1,
     CurrentStatus:      cache.STATUS_NORMAL,
     Request:            r,
     Response: &cache.ResponseStorage{
-      Header: w.Header(),
-      Body:   resp_body,
+      Header:     w.Header(),
+      Body:       resp_body,
+      StatusCode: resp_status_code,
     },
   }
   Cache.Set(cache_key, cache_storage)
