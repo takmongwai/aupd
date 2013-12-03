@@ -16,7 +16,7 @@ var c = New()
 func update_timeout_entity(s *Storage) {
   defer func() {
     if re := recover(); re != nil {
-      log.Println("Recovered in handler:", re)
+      log.Println("Recovered in update_timeout_entity:", re)
       w.WriteHeader(500)
       w.Write([]byte("BackenServer Error"))
     }
@@ -38,7 +38,7 @@ func update_timeout_entity(s *Storage) {
   s.Response.Body = body
   s.Response.StatusCode = status_code
   s.Response.Header = *header
-  log.Printf("update %s,%d,%s,%v Sec",
+  log.Printf(`update "%s",%d,[%s],%v Sec`,
     s.Request.URL.String(),
     s.ClientAccessCount,
     s.ClientLastAccessAt.Format("2006-01-02 15:04:05"),
