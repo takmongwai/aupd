@@ -47,7 +47,7 @@ func Dispatch() {
   defer close(quit)
 
   for {
-    time.Sleep(time.Millisecond * 1000)
+    time.Sleep(time.Millisecond * 500)
     c.RemoveOldEntities()
     ts := c.TimeoutEntities()
     for _, s := range ts {
