@@ -14,6 +14,13 @@ var c = New()
 */
 
 func update_timeout_entity(s *Storage) {
+  defer func() {
+    if re := recover(); re != nil {
+      log.Println("Recovered in handler:", re)
+      w.WriteHeader(500)
+      w.Write([]byte("BackenServer Error"))
+    }
+  }()
   start_time := time.Now()
   s.CurrentStatus = STATUS_UPDATING
   r := s.Request
