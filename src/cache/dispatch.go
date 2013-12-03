@@ -14,13 +14,14 @@ var is_running bool = false
 更新超时的实体
 */
 
-func update_timeout_entity(s *Storage) {
+func update_timeout_entity(s *Storage) (err error) {
   defer func() {
     if re := recover(); re != nil {
       log.Println("Recovered in update_timeout_entity:", re)
     }
   }()
-  //start_time := time.Now()
+  defer func() { s.CurrentStatus = STATUS_NORMAL }()
+
   s.CurrentStatus = STATUS_UPDATING
   r := s.Request
   body, status_code, header, err := client.HttpRequestNotResponse(r)
@@ -28,7 +29,7 @@ func update_timeout_entity(s *Storage) {
     log.Printf("update_timeout_entity error. %v", err)
     return
   }
-  defer func() { s.CurrentStatus = STATUS_NORMAL }()
+
   if status_code != 200 {
     log.Printf("update %s,status %d\n", s.Request.URL.String(), status_code)
     return
@@ -37,26 +38,32 @@ func update_timeout_entity(s *Storage) {
   s.Response.Body = body
   s.Response.StatusCode = status_code
   s.Response.Header = *header
-  /*
-     log.Printf(`update "%s",%d,[%s],%v Sec`,
-       s.Request.URL.String(),
-       s.ClientAccessCount,
-       s.ClientLastAccessAt.Format("2006-01-02 15:04:05"),
-       time.Now().Sub(start_time).Seconds(),
-     )*/
+  return
 }
 
 func Dispatch() {
+  errc := make(chan error)
+  quit := make(chan struct{})
+  defer close(quit)
+
   for {
-    if is_running {
-      continue
-    }
     time.Sleep(time.Millisecond * 1000)
     c.RemoveOldEntities()
-    for _, s := range c.TimeoutEntities() {
-      is_running = true
-      go update_timeout_entity(s)
+    ts := c.TimeoutEntities()
+    for _, s := range ts {
+      go func(s *Storage) {
+        select {
+        case errc <- update_timeout_entity(s):
+          log.Printf("update %s done", s.Request.URL.String())
+        case <-quit:
+          log.Printf("update %s quit", s.Request.URL.String())
+        }
+      }(s)
     }
-    is_running = false
+    for _ = range ts {
+      if err := <-errc; err != nil {
+        log.Println(err)
+      }
+    }
   }
 }

@@ -7,12 +7,12 @@ import (
   "net/http"
   "sync"
   "time"
-  _"util"
+  "util"
 )
 
 const (
-  CONNECTION_TIME_OUT     = 15  //连接超时
-  RESPONSE_TIME_OUT       = 60 //响应超时
+  CONNECTION_TIME_OUT     = 15 //连接超时,秒
+  RESPONSE_TIME_OUT       = 90 //响应超时,秒
   MAX_IDLE_CONNS_PRE_HOST = 6
   DISABLE_COMPRESSION     = false
   DISABLE_KEEP_ALIVES     = true
@@ -27,20 +27,20 @@ type HttpResponse struct { //响应体
   StatusCode int
 }
 
-func timeoutDialer(cTimeout time.Duration, rwTimeout time.Duration) func(net, addr string) (c net.Conn, err error) {
+func timeoutDialer(conn_timeout int, rw_timeout int) func(net, addr string) (c net.Conn, err error) {
   return func(netw, addr string) (net.Conn, error) {
-    conn, err := net.DialTimeout(netw, addr, cTimeout)
+    conn, err := net.DialTimeout(netw, addr, time.Duration(conn_timeout)*time.Second)
     if err != nil {
-      log.Printf("Failed to connect to [%s]. Timed out after %d seconds\n", addr, rwTimeout*time.Second)
+      log.Printf("Failed to connect to [%s]. Timed out after %d seconds\n", addr, rw_timeout)
       return nil, err
     }
-    conn.SetDeadline(time.Now().Add(rwTimeout))
+    conn.SetDeadline(time.Now().Add(time.Duration(rw_timeout) * time.Second))
     return conn, nil
   }
 }
 
 var transport = http.Transport{
-  Dial: timeoutDialer(time.Duration(CONNECTION_TIME_OUT)*time.Second, time.Duration(RESPONSE_TIME_OUT)*time.Second),
+  Dial: timeoutDialer(CONNECTION_TIME_OUT, RESPONSE_TIME_OUT),
   ResponseHeaderTimeout: time.Duration(RESPONSE_TIME_OUT) * time.Second,
   DisableCompression:    DISABLE_COMPRESSION,
   DisableKeepAlives:     DISABLE_KEEP_ALIVES,
@@ -118,9 +118,9 @@ func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, resp_stat
   resp_status_code = resp.StatusCode
   w.WriteHeader(resp_status_code)
 
-  //body, written, err = util.Copy(w, resp.Body)
-  body, err = ioutil.ReadAll(resp.Body)
-  written = int64(len(body))
+  body, written, err = util.Copy(w, resp.Body)
+  //body, err = ioutil.ReadAll(resp.Body)
+  //written = int64(len(body))
   if err != nil {
     showError(w, []byte(err.Error()), body, &written)
     return
