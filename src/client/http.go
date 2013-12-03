@@ -7,13 +7,13 @@ import (
   "net/http"
   "sync"
   "time"
-  "util"
+  _"util"
 )
 
 const (
   CONNECTION_TIME_OUT     = 5  //连接超时
   RESPONSE_TIME_OUT       = 20 //响应超时
-  MAX_IDLE_CONNS_PRE_HOST = 20
+  MAX_IDLE_CONNS_PRE_HOST = 6
   DISABLE_COMPRESSION     = false
   DISABLE_KEEP_ALIVES     = true
   MAX_CACHE_ENTITY        = 1024 * 512 //byte
@@ -118,7 +118,9 @@ func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, resp_stat
   resp_status_code = resp.StatusCode
   w.WriteHeader(resp_status_code)
 
-  body, written, err = util.Copy(w, resp.Body)
+  //body, written, err = util.Copy(w, resp.Body)
+  body, err = ioutil.ReadAll(resp.Body)
+  written = int64(len(body))
   if err != nil {
     showError(w, []byte(err.Error()), body, &written)
     return
