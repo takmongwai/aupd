@@ -19,7 +19,7 @@ func update_timeout_entity(s *Storage) {
       log.Println("Recovered in update_timeout_entity:", re)
     }
   }()
-  start_time := time.Now()
+  //start_time := time.Now()
   s.CurrentStatus = STATUS_UPDATING
   r := s.Request
   body, status_code, header, err := client.HttpRequestNotResponse(r)
