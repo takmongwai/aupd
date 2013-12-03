@@ -11,8 +11,8 @@ import (
 )
 
 const (
-  CONNECTION_TIME_OUT     = 5  //连接超时
-  RESPONSE_TIME_OUT       = 20 //响应超时
+  CONNECTION_TIME_OUT     = 15  //连接超时
+  RESPONSE_TIME_OUT       = 60 //响应超时
   MAX_IDLE_CONNS_PRE_HOST = 6
   DISABLE_COMPRESSION     = false
   DISABLE_KEEP_ALIVES     = true
