@@ -17,8 +17,6 @@ func update_timeout_entity(s *Storage) {
   defer func() {
     if re := recover(); re != nil {
       log.Println("Recovered in update_timeout_entity:", re)
-      w.WriteHeader(500)
-      w.Write([]byte("BackenServer Error"))
     }
   }()
   start_time := time.Now()
