@@ -97,24 +97,26 @@ func (c *Cache) TimeoutEntities() (rs []*Storage) {
       s.UpdatedAt = time.Now()
     }
   }
+
   if len(rs) == 0 {
     return
   }
+  sort.Sort(sortByUpatedAt(rs))
   if len(rs) <= MAX_CONCURRENT {
     return
   }
   rs = rs[0:MAX_CONCURRENT]
   /*
-    log.Println("排序前:")
-    for _, s := range rs {
-      log.Print(s.Request.URL.String())
-    }
-    sort.Sort(sortByUpatedAt(rs))
+     log.Println("排序前:")
+     for _, s := range rs {
+       log.Print(s.Request.URL.String())
+     }
 
-    log.Println("排序后:")
-    for _, s := range rs {
-      log.Print(s.Request.URL.String())
-    }*/
+
+     log.Println("排序后:")
+     for _, s := range rs {
+       log.Print(s.Request.URL.String())
+     }*/
   return
 }
 
