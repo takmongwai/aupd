@@ -36,12 +36,13 @@ func update_timeout_entity(s *Storage) {
   s.Response.Body = body
   s.Response.StatusCode = status_code
   s.Response.Header = *header
+  /*
   log.Printf(`update "%s",%d,[%s],%v Sec`,
     s.Request.URL.String(),
     s.ClientAccessCount,
     s.ClientLastAccessAt.Format("2006-01-02 15:04:05"),
     time.Now().Sub(start_time).Seconds(),
-  )
+  )*/
 }
 
 func Dispatch() {

@@ -35,9 +35,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		resp_status_code int
 	)
 
-	log.Printf(`access:"%s",key: "%s"`, r.URL.String(), cache_key)
+	/* log.Printf(`access:"%s",key: "%s"`, r.URL.String(), cache_key) */
 	if r.Header.Get("ACS_RELOAD") == "true" {
-		log.Printf("RELOAD %s", r.URL.String())
+		//log.Printf("RELOAD %s", r.URL.String())
 		Cache.Remove(cache_key)
 	}
 
