@@ -8,6 +8,7 @@ import (
 )
 
 var c = New()
+var is_running bool = false
 
 /*
 更新超时的实体
@@ -37,20 +38,25 @@ func update_timeout_entity(s *Storage) {
   s.Response.StatusCode = status_code
   s.Response.Header = *header
   /*
-  log.Printf(`update "%s",%d,[%s],%v Sec`,
-    s.Request.URL.String(),
-    s.ClientAccessCount,
-    s.ClientLastAccessAt.Format("2006-01-02 15:04:05"),
-    time.Now().Sub(start_time).Seconds(),
-  )*/
+     log.Printf(`update "%s",%d,[%s],%v Sec`,
+       s.Request.URL.String(),
+       s.ClientAccessCount,
+       s.ClientLastAccessAt.Format("2006-01-02 15:04:05"),
+       time.Now().Sub(start_time).Seconds(),
+     )*/
 }
 
 func Dispatch() {
   for {
+    if is_running {
+      continue
+    }
     time.Sleep(time.Millisecond * 1000)
     c.RemoveOldEntities()
     for _, s := range c.TimeoutEntities() {
+      is_running = true
       go update_timeout_entity(s)
     }
+    is_running = false
   }
 }

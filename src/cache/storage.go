@@ -4,6 +4,7 @@ import (
   "fmt"
   "log"
   "net/http"
+  "sort"
   "sync"
   "time"
 )
@@ -16,6 +17,7 @@ const (
   ENTITY_UPDATE_DURATION      = 60 //Second,每个缓存需要更新的时间,依据最后更新时间和当前时间计算
   ENTITY_DURATION             = 3600
   CLIENT_LAST_ACCESS_DURATION = 900 //Second,每个缓存的持续时间,依据最后访问时间和当前时间计算
+  MAX_CONCURRENT              = 15  //每次更新的并发数,每次返回需要更新的条目数不超过该设定
 )
 
 type ResponseStorage struct { //响应体
@@ -41,6 +43,12 @@ type Cache map[string]*Storage
 var cacheStorage = make(Cache)
 
 var _instance Cache
+
+type sortByUpatedAt []*Storage
+
+func (v sortByUpatedAt) Len() int           { return len(v) }
+func (v sortByUpatedAt) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
+func (v sortByUpatedAt) Less(i, j int) bool { return v[i].UpdatedAt.Unix() < v[j].UpdatedAt.Unix() }
 
 func New() Cache {
   if _instance == nil {
@@ -86,14 +94,33 @@ func (c *Cache) TimeoutEntities() (rs []*Storage) {
   for _, s := range cacheStorage {
     if (time.Now().Unix() - s.UpdatedAt.Unix()) > s.UpdateDuration {
       rs = append(rs, s)
+      s.UpdatedAt = time.Now()
     }
   }
+  if len(rs) == 0 {
+    return
+  }
+  if len(rs) <= MAX_CONCURRENT {
+    return
+  }
+  rs = rs[0:MAX_CONCURRENT]
+  /*
+    log.Println("排序前:")
+    for _, s := range rs {
+      log.Print(s.Request.URL.String())
+    }
+    sort.Sort(sortByUpatedAt(rs))
+
+    log.Println("排序后:")
+    for _, s := range rs {
+      log.Print(s.Request.URL.String())
+    }*/
   return
 }
 
 /**
 删除不再需要的缓存
-1: 最后一次客户端访问时间距离当前时间超过1个小时的
+1: 最后一次客户端访问时间距离当前时间超过 CLIENT_LAST_ACCESS_DURATION 的
 */
 func (c *Cache) RemoveOldEntities() {
   lock.Lock()
