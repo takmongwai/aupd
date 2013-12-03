@@ -53,10 +53,10 @@ var client = &http.Client{
 
 func headerCopy(s http.Header, d *http.Header) {
   lock.Lock()
+  defer lock.Unlock()
   for hk, _ := range s {
     d.Set(hk, s.Get(hk))
   }
-  lock.Unlock()
 }
 
 func showError(w http.ResponseWriter, msg []byte, outbuf []byte, written *int64) {

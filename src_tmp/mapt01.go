@@ -16,7 +16,6 @@ var s *Storage
 
 func main() {
   fmt.Println("================================")
-
   for i := 0; i <= 10; i++ {
     s = &Storage{InitAt: time.Now()}
     c[fmt.Sprintf("key_%d", i)] = s
