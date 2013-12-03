@@ -50,7 +50,10 @@ func Dispatch() {
     time.Sleep(time.Millisecond * 500)
     c.RemoveOldEntities()
     ts := c.TimeoutEntities()
-    log.Println("begin update ", ts)
+    if len(ts) > 0 {
+      log.Println("begin update ", ts)
+    }
+
     for _, s := range ts {
       go func(s *Storage) {
         select {
@@ -61,12 +64,16 @@ func Dispatch() {
         }
       }(s)
     }
-    log.Println("error?")
+    if len(ts) > 0 {
+      log.Println("error?")
+    }
     for _ = range ts {
       if err := <-errc; err != nil {
         log.Println(err)
       }
     }
-    log.Println("end update ", ts)
+    if len(ts) > 0 {
+      log.Println("end update ", ts)
+    }
   }
 }
