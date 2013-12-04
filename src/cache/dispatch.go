@@ -42,7 +42,7 @@ func update_timeout_entity(s *Storage) (err error) {
 }
 
 func Dispatch() {
-  errc := make(chan error)
+  errc := make(chan error,15)
   quit := make(chan struct{})
   defer close(quit)
 
