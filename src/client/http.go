@@ -51,6 +51,12 @@ var client = &http.Client{
   Transport: &transport,
 }
 
+func cleanHeader(h *http.Header) {
+  if len(h.Get("Accept-Encoding")) > 0 {
+    h.Del("Accept-Encoding")
+  }
+}
+
 func headerCopy(s http.Header, d *http.Header) {
   lock.Lock()
   defer lock.Unlock()
@@ -76,6 +82,7 @@ func HttpRequestNotResponse(r *http.Request) (body []byte, resp_status_code int,
     panic(err)
   }
   headerCopy(r.Header, &req.Header)
+  cleanHeader(&req.Header)
   defer func() { req.Close = true }()
   resp, err = client.Do(req)
   if err != nil {
@@ -98,8 +105,8 @@ func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, resp_stat
 
   req, err = http.NewRequest(r.Method, r.URL.String(), r.Body)
   headerCopy(r.Header, &req.Header)
+  cleanHeader(&req.Header)
   defer func() { req.Close = true }()
-
   if err != nil {
     showError(w, []byte(err.Error()), body, &written)
     return
