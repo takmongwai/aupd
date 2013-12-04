@@ -1,10 +1,12 @@
 package client
 
 import (
+  "fmt"
   "io/ioutil"
   "log"
   "net"
   "net/http"
+  "strings"
   "sync"
   "time"
   "util"
@@ -68,6 +70,9 @@ func headerCopy(s http.Header, d *http.Header) {
 func showError(w http.ResponseWriter, msg []byte, outbuf []byte, written *int64) {
   outbuf = msg
   *written = int64(len(msg))
+  for hk, _ := range w.Header() {
+    w.Header().Del(hk)
+  }
   w.WriteHeader(500)
   w.Write(msg)
 }
@@ -126,10 +131,23 @@ func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, resp_stat
   w.WriteHeader(resp_status_code)
 
   body, written, err = util.Copy(w, resp.Body)
-  
+
   if err != nil {
     showError(w, []byte(err.Error()), body, &written)
     return
+  }
+  return
+}
+
+func FullQueryString(r *http.Request) (rs string) {
+  var rawQuery []string
+  r.ParseForm()
+  for k, _ := range r.Form {
+    rawQuery = append(rawQuery, fmt.Sprintf("%s=%s", k, r.Form.Get(k)))
+  }
+  rs = r.URL.String()
+  if len(rawQuery) > 0 {
+    rs = fmt.Sprintf("%s?%s", rs, strings.Join(rawQuery, "&"))
   }
   return
 }

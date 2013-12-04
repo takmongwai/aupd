@@ -15,23 +15,23 @@ var is_running bool = false
 */
 
 func update_timeout_entity(s *Storage) (err error) {
+  //log.Printf("begin update %s,%s", s.Request.URL.String(), s.InitAt)
   defer func() {
     if re := recover(); re != nil {
-      log.Println("Recovered in update_timeout_entity:", re)
+      log.Println("Recovered in update_timeout_entity:", re, " at ", client.FullQueryString(s.Request))
     }
+    s.CurrentStatus = STATUS_NORMAL
   }()
-  defer func() { s.CurrentStatus = STATUS_NORMAL }()
 
   s.CurrentStatus = STATUS_UPDATING
-  r := s.Request
-  body, status_code, header, err := client.HttpRequestNotResponse(r)
+  body, status_code, header, err := client.HttpRequestNotResponse(s.Request)
   if err != nil {
-    log.Printf("update_timeout_entity error. %v", err)
+    log.Printf("update_timeout_entity error. %v at %s", err, client.FullQueryString(s.Request))
     return
   }
 
   if status_code != 200 {
-    log.Printf("update %s,status %d\n", s.Request.URL.String(), status_code)
+    log.Printf("update %s,status %d\n", client.FullQueryString(s.Request), status_code)
     return
   }
   s.UpdatedAt = time.Now()
@@ -45,31 +45,38 @@ func Dispatch() {
   errc := make(chan error, MAX_CONCURRENT)
   quit := make(chan struct{})
   defer close(quit)
-
+  ts := make([]*Storage, MAX_CONCURRENT)
   for {
-    time.Sleep(time.Millisecond * 500)
+    time.Sleep(time.Millisecond * 300)
+    seq := time.Now().UnixNano()
     c.RemoveOldEntities()
-    ts := c.TimeoutEntities()
+    ts = c.TimeoutEntities()
+
     if len(ts) > 0 {
-      log.Println("begin update ", ts)
+      log.Printf("begin %d,size: %d", seq, len(ts))
+      log.Println("total cached: %d", c.Size())
     }
-    for _, s := range ts {
-      go func(s *Storage) {
+
+    for i := 0; i < len(ts); i++ {
+      go func(fs *Storage) {
         select {
-        case errc <- update_timeout_entity(s):
-          log.Printf("update %s done", s.Request.URL.String())
+        case errc <- update_timeout_entity(fs):
+          log.Printf("update %s done", client.FullQueryString(fs.Request))
         case <-quit:
-          log.Printf("update %s quit", s.Request.URL.String())
+          log.Printf("update %s quit", client.FullQueryString(fs.Request))
         }
-      }(s)
+      }(ts[i])
     }
-    for _ = range ts {
+
+    for i := 0; i < len(ts); i++ {
       if err := <-errc; err != nil {
         log.Println(err)
       }
     }
+    
     if len(ts) > 0 {
-      log.Println("end update ", ts)
+      log.Printf("end %d,size: %d", seq, len(ts))
     }
+
   }
 }

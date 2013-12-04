@@ -22,9 +22,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
   defer func() {
     if re := recover(); re != nil {
-      log.Println("Recovered in handler:", re)
+      log.Println("Recovered in handler:", re, " at ", r.URL.String())
+      for hk, _ := range w.Header() {
+        w.Header().Del(hk)
+      }
       w.WriteHeader(500)
-      w.Write([]byte("BackenServer Error"))
+      w.Write([]byte(fmt.Sprintf("BackenServer Error,%s", r.URL.String())))
     }
   }()
 
@@ -37,9 +40,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
     resp_status_code int
   )
 
-  /* log.Printf(`access:"%s",key: "%s"`, r.URL.String(), cache_key) */
   if r.Header.Get("ACS_RELOAD") == "true" {
-    //log.Printf("RELOAD %s", r.URL.String())
     Cache.Remove(cache_key)
   }
 
