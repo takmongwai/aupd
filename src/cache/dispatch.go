@@ -54,7 +54,7 @@ func Dispatch() {
 
     if len(ts) > 0 {
       log.Printf("begin %d,size: %d", seq, len(ts))
-      log.Println("total cached: %d", c.Size())
+      log.Printf("total cached: %d", c.Size())
     }
 
     for i := 0; i < len(ts); i++ {
