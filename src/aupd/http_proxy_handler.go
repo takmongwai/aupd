@@ -6,8 +6,6 @@ import (
   "fmt"
   "log"
   "net/http"
-  _ "strconv"
-  _ "strings"
   "time"
 )
 

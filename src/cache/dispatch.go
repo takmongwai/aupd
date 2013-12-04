@@ -8,7 +8,7 @@ import (
 )
 
 var c = New()
-var is_running bool = false
+
 
 /*
 更新超时的实体
@@ -73,7 +73,6 @@ func Dispatch() {
         log.Println(err)
       }
     }
-    
     if len(ts) > 0 {
       log.Printf("end %d,size: %d", seq, len(ts))
     }

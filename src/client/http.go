@@ -145,7 +145,7 @@ func FullQueryString(r *http.Request) (rs string) {
   for k, _ := range r.Form {
     rawQuery = append(rawQuery, fmt.Sprintf("%s=%s", k, r.Form.Get(k)))
   }
-  rs = r.URL.String()
+  rs = r.RequestURI
   if len(rawQuery) > 0 {
     rs = fmt.Sprintf("%s?%s", rs, strings.Join(rawQuery, "&"))
   }
