@@ -42,7 +42,7 @@ func update_timeout_entity(s *Storage) (err error) {
 }
 
 func Dispatch() {
-  errc := make(chan error,15)
+  errc := make(chan error, MAX_CONCURRENT)
   quit := make(chan struct{})
   defer close(quit)
 
@@ -53,7 +53,6 @@ func Dispatch() {
     if len(ts) > 0 {
       log.Println("begin update ", ts)
     }
-
     for _, s := range ts {
       go func(s *Storage) {
         select {
@@ -63,9 +62,6 @@ func Dispatch() {
           log.Printf("update %s quit", s.Request.URL.String())
         }
       }(s)
-    }
-    if len(ts) > 0 {
-      log.Println("error?")
     }
     for _ = range ts {
       if err := <-errc; err != nil {

@@ -126,8 +126,7 @@ func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, resp_stat
   w.WriteHeader(resp_status_code)
 
   body, written, err = util.Copy(w, resp.Body)
-  //body, err = ioutil.ReadAll(resp.Body)
-  //written = int64(len(body))
+  
   if err != nil {
     showError(w, []byte(err.Error()), body, &written)
     return

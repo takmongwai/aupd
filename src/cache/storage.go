@@ -16,7 +16,7 @@ const (
   STATUS_UPDATING             = 2
   ENTITY_UPDATE_DURATION      = 60 //Second,每个缓存需要更新的时间,依据最后更新时间和当前时间计算
   ENTITY_DURATION             = 3600
-  CLIENT_LAST_ACCESS_DURATION = 1800 //Second,每个缓存的持续时间,依据最后访问时间和当前时间计算
+  CLIENT_LAST_ACCESS_DURATION = 7200 //Second,每个缓存的持续时间,依据最后访问时间和当前时间计算
   MAX_CONCURRENT              = 15   //每次更新的并发数,每次返回需要更新的条目数不超过该设定
 )
 
@@ -35,7 +35,7 @@ type Storage struct {
   ClientAccessCount  int           //客户端访问次数
   CurrentStatus      int           //当前状态
   Request            *http.Request //向后端发请求的结构
-  Response           *ResponseStorage
+  Response           *ResponseStorage //后端响应结果
 }
 
 type Cache map[string]*Storage
@@ -106,17 +106,6 @@ func (c *Cache) TimeoutEntities() (rs []*Storage) {
     return
   }
   rs = rs[0:MAX_CONCURRENT]
-  /*
-     log.Println("排序前:")
-     for _, s := range rs {
-       log.Print(s.Request.URL.String())
-     }
-
-
-     log.Println("排序后:")
-     for _, s := range rs {
-       log.Print(s.Request.URL.String())
-     }*/
   return
 }
 
@@ -147,6 +136,7 @@ func (s *Storage) Info() string {
     ClientLastAccessAt: %s
     ClientAccessCount: %d
     CurrentStatus: %d
+    URL: %s
     `,
     s.InitAt,
     s.UpdatedAt,
@@ -154,6 +144,7 @@ func (s *Storage) Info() string {
     s.ClientLastAccessAt,
     s.ClientAccessCount,
     s.CurrentStatus,
+    s.Request.URL.String(),
   )
   return rs
 }
