@@ -104,6 +104,8 @@ func (c *Cache) TimeoutEntities() (rs []*Storage) {
   if len(rs) <= MAX_CONCURRENT {
     return
   }
+  log.Println("total timeout entities: ", len(rs))
+  
   rs = rs[0:MAX_CONCURRENT]
   for i := 0; i < len(rs); i++ {
     rs[i].UpdatedAt = time.Now()
