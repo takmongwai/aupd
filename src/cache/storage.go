@@ -27,14 +27,14 @@ type ResponseStorage struct { //响应体
 }
 
 type Storage struct {
-  InitAt             time.Time     //初始化时间
-  UpdatedAt          time.Time     //最后更新时间
-  UpdateDuration     int64         //(秒)缓存更新时间: if now() - UpdatedAt > this then remov
-  Duration           int64         //(秒)缓存持续时间: now() - InitAt > this then remov
-  ClientLastAccessAt time.Time     //客户端最后访问时间: 如果连续1个小时没有客户端访问,则删除
-  ClientAccessCount  int           //客户端访问次数
-  CurrentStatus      int           //当前状态
-  Request            *http.Request //向后端发请求的结构
+  InitAt             time.Time        //初始化时间
+  UpdatedAt          time.Time        //最后更新时间
+  UpdateDuration     int64            //(秒)缓存更新时间: if now() - UpdatedAt > this then remov
+  Duration           int64            //(秒)缓存持续时间: now() - InitAt > this then remov
+  ClientLastAccessAt time.Time        //客户端最后访问时间: 如果连续1个小时没有客户端访问,则删除
+  ClientAccessCount  int              //客户端访问次数
+  CurrentStatus      int              //当前状态
+  Request            *http.Request    //向后端发请求的结构
   Response           *ResponseStorage //后端响应结果
 }
 
@@ -94,7 +94,6 @@ func (c *Cache) TimeoutEntities() (rs []*Storage) {
   for _, s := range cacheStorage {
     if (time.Now().Unix() - s.UpdatedAt.Unix()) > s.UpdateDuration {
       rs = append(rs, s)
-      s.UpdatedAt = time.Now()
     }
   }
 
@@ -106,6 +105,9 @@ func (c *Cache) TimeoutEntities() (rs []*Storage) {
     return
   }
   rs = rs[0:MAX_CONCURRENT]
+  for i := 0; i < len(rs); i++ {
+    rs[i].UpdatedAt = time.Now()
+  }
   return
 }
 
