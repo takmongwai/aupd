@@ -119,6 +119,10 @@ func (c *Cache) RemoveOldEntities() {
   lock.Lock()
   defer lock.Unlock()
   for k, s := range cacheStorage {
+    if time.Now().Unix()-s.InitAt.Unix() >= 86400 {
+      log.Printf("RemoveOldEntities(86400): %s\n", s.Info())
+      delete(cacheStorage, k)
+    }
     if time.Now().Unix()-s.ClientLastAccessAt.Unix() > CLIENT_LAST_ACCESS_DURATION {
       log.Printf("RemoveOldEntities: %s\n", s.Info())
       delete(cacheStorage, k)
@@ -127,8 +131,11 @@ func (c *Cache) RemoveOldEntities() {
 }
 
 func (c *Cache) Remove(k string) {
+  lock.Lock()
+  defer lock.Unlock()
   delete(cacheStorage, k)
 }
+
 func (s *Storage) Info() string {
   rs := fmt.Sprintf(
     `
