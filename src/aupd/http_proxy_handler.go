@@ -11,21 +11,18 @@ import (
 
 var Cache = cache.New()
 
-func showError(w http.ResponseWriter, msg []byte) {
-  w.WriteHeader(500)
-  w.Write(msg)
-}
-
 func handler(w http.ResponseWriter, r *http.Request) {
 
   defer func() {
     if re := recover(); re != nil {
       log.Println("Recovered in handler:", re, " at ", r.URL.String())
       for hk, _ := range w.Header() {
+        if hk == "Server" {
+          continue
+        }
         w.Header().Del(hk)
       }
-      w.WriteHeader(500)
-      w.Write([]byte(fmt.Sprintf("BackenServer Error,%s", r.URL.String())))
+      http.Error(w, fmt.Sprintf("BackenServer Error,%s", r.URL.String()), http.StatusInternalServerError)
     }
   }()
 
@@ -55,7 +52,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
   resp_body, resp_status_code, _, err = client.HttpRequest(w, r)
 
   if err != nil {
-    showError(w, []byte(err.Error()))
+    http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
 

@@ -27,15 +27,16 @@ all: install
 	@echo ${TOP_PKG}
 	
 build:
-	$(GOBUILD) -o $(PWD)/bin/$(TOP_PKG) $(TOP_PKG)
+	$(GOBUILD) -o $(PWD)/bin/$(TOP_PKG)_$(shell date +%Y%m%d%H%M%S) $(TOP_PKG)
+	
 
 clean:
 	$(GOCLEAN) $(TOP_PKG)
-	rm -rf bin
 	rm -rf pkg
 	
 install:
 	$(GOINSTALL) $(TOP_PKG)
+	mv $(PWD)/bin/$(TOP_PKG) $(PWD)/bin/$(TOP_PKG)_$(shell date +%Y%m%d%H%M%S)
 	
 test:
 	$(GOTEST) $(TOP_PKG)

@@ -6,7 +6,7 @@ import (
   "log"
   "net"
   "net/http"
-_  "strings"
+  _ "strings"
   "sync"
   "time"
   "util"
@@ -15,7 +15,7 @@ _  "strings"
 const (
   CONNECTION_TIME_OUT     = 15 //连接超时,秒
   RESPONSE_TIME_OUT       = 90 //响应超时,秒
-  MAX_IDLE_CONNS_PRE_HOST = 6
+  MAX_IDLE_CONNS_PRE_HOST = 2
   DISABLE_COMPRESSION     = false
   DISABLE_KEEP_ALIVES     = true
   MAX_CACHE_ENTITY        = 1024 * 512 //byte
@@ -67,16 +67,6 @@ func headerCopy(s http.Header, d *http.Header) {
   }
 }
 
-func showError(w http.ResponseWriter, msg []byte, outbuf []byte, written *int64) {
-  outbuf = msg
-  *written = int64(len(msg))
-  for hk, _ := range w.Header() {
-    w.Header().Del(hk)
-  }
-  w.WriteHeader(500)
-  w.Write(msg)
-}
-
 func HttpRequestNotResponse(r *http.Request) (body []byte, resp_status_code int, resp_header *http.Header, err error) {
   var (
     req  *http.Request
@@ -88,12 +78,13 @@ func HttpRequestNotResponse(r *http.Request) (body []byte, resp_status_code int,
   }
   headerCopy(r.Header, &req.Header)
   cleanHeader(&req.Header)
-  defer func() { req.Close = true }()
+  req.Close = true
   resp, err = client.Do(req)
   if err != nil {
     panic(err)
   }
   defer resp.Body.Close()
+  defer transport.CloseIdleConnections()
   resp_status_code = resp.StatusCode
 
   resp_header = &http.Header{}
@@ -113,13 +104,14 @@ func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, resp_stat
   cleanHeader(&req.Header)
   defer func() { req.Close = true }()
   if err != nil {
-    showError(w, []byte(err.Error()), body, &written)
+    http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
   resp, err := client.Do(req)
   defer resp.Body.Close()
+  defer transport.CloseIdleConnections()
   if err != nil {
-    showError(w, []byte(err.Error()), body, &written)
+    http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
 
@@ -133,7 +125,7 @@ func HttpRequest(w http.ResponseWriter, r *http.Request) (body []byte, resp_stat
   body, written, err = util.Copy(w, resp.Body)
 
   if err != nil {
-    showError(w, []byte(err.Error()), body, &written)
+    http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
   return

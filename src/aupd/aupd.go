@@ -9,6 +9,7 @@ import (
   "os"
   "path/filepath"
   "strconv"
+  "time"
 )
 
 var g_port int = 8000
@@ -60,12 +61,28 @@ func main() {
   }
 
   go cache.Dispatch()
-  http.HandleFunc("/", handler)
+
+  // http.HandleFunc("/", handler)
+  //   log.Printf("Start serving on %s:%d", g_host, g_port)
+  //   if err := http.ListenAndServe(fmt.Sprintf("%s:%d", g_host, g_port), nil); err != nil {
+  //     log.Println("ListenAndServe: ", err)
+  //     os.Exit(2)
+  //   }
+
   log.Printf("Start serving on %s:%d", g_host, g_port)
-  if err := http.ListenAndServe(fmt.Sprintf("%s:%d", g_host, g_port), nil); err != nil {
+  s := &http.Server{
+    Addr:           fmt.Sprintf("%s:%d", g_host, g_port),
+    Handler:        http.HandlerFunc(handler),
+    ReadTimeout:    30 * time.Second,
+    WriteTimeout:   30 * time.Second,
+    MaxHeaderBytes: 1 << 20,
+  }
+
+  if err := s.ListenAndServe(); err != nil {
     log.Println("ListenAndServe: ", err)
     os.Exit(2)
   }
+
   os.Exit(0)
 
 }
