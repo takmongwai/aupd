@@ -16,8 +16,8 @@ const (
   STATUS_UPDATING             = 2
   ENTITY_UPDATE_DURATION      = 60 //Second,每个缓存需要更新的时间,依据最后更新时间和当前时间计算
   ENTITY_DURATION             = 3600
-  CLIENT_LAST_ACCESS_DURATION = 3600 //Second,每个缓存的持续时间,依据最后访问时间和当前时间计算
-  MAX_CONCURRENT              = 15   //每次更新的条目数,每次返回需要更新的条目数不超过该设定
+  CLIENT_LAST_ACCESS_DURATION = 1800 //Second,每个缓存的持续时间,依据最后访问时间和当前时间计算
+  MAX_CONCURRENT              = 25   //每次更新的条目数,每次返回需要更新的条目数不超过该设定
 )
 
 type ResponseStorage struct { //响应体
